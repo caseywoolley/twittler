@@ -30,67 +30,96 @@
         $tweets.html('');
         var $updateTweets = $('.update-tweets');
         $updateTweets.css({'display' : 'none'});
-        var initialTweets = streams.home.reverse();
+        var initialTweets = streams.home.slice().reverse();
         var userPage = window.location.hash.substr(1);
         var visitor = 'turdferguson';
         streams.users[visitor] = [];
         var newTweets;
-        var currentTweets = 0;
+        var currentTweets = initialTweets.length;
+        var visibleTweets = 0;
+        var topTweet = 0;
         var limit = 20;
+        var pagebreak;
         var loaded = false;
         var hiddenTweets = [];
-        var tweetCount = 0; //temporary
 
         console.log(userPage);
         console.log(users);
-        console.log(streams);
+        console.log(streams.home);
+        console.log(initialTweets);
 
         //TODO: add click event for username link to show their feed + return home button
 
         $updateTweets.on('click', function(){
           showTweets(hiddenTweets);
+          hiddenTweets = [];
+          $updateTweets.hide();
         });
 
+        //store new tweets to be displayed later
         var addTweets = function(all, shown){
+          $(window).unbind('scroll');
+          if (loaded){
+            while(all > shown){
+              var tweet = streams.home[all];
+              hiddenTweets.push(tweet);
+              var s = 's';
+              if ( hiddenTweets.length === 1 ) {
+                s = '';
+                $updateTweets.show();
+              }
 
-          //store new tweets to be displayed later
-          while(all > shown){
-            var tweet = streams.home[all];
-            if (loaded){ hiddenTweets.push(tweet) }
-            var s = 's';
-            var hiddenCount = hiddenTweets.length;
-            if ( hiddenTweets.length === 1 ) {
-              s = '';
-              $updateTweets.show();
+              //show tweet count on refresh button
+              $updateTweets.text('Show ' + (hiddenTweets.length > 99 ? '100+' : hiddenTweets.length) + ' new tweet' + s);
+              all -= 1;
             }
-
-            //update button text
-            $updateTweets.text('Show ' + (hiddenTweets.length > 99 ? '100+' : hiddenTweets.length) + ' new tweet' + s);
-            all -= 1;
           }
+          $(window).bind('scroll', bindScroll);
+          console.log(hiddenTweets.length);
         }
 
         var checkTweets = function() {
           newTweets = streams.home.length - 1;
           addTweets(newTweets, currentTweets);
           currentTweets = newTweets;
-          $tweets.find('li:nth-child(n+' + limit + ')').remove();
-          loaded = true;
+
+          //loaded = true;
           setTimeout(checkTweets, 500);
         };
 
-        var showTweets = function(tweets) {
-          var pagebreak = Math.min(tweets.length, limit);
-          for (var i = 0; i < pagebreak; i++){
-            showTweet(tweets[i]);
+        var infiniteScroll = function() {
+            var end = (topTweet + 1) - $('.tweet').length;
+            var start = end - Math.min(limit, end);
+            var loadMore = streams.home.slice(start, end);
+            $(window).bind('scroll', bindScroll);
+            console.log(loadMore);
+            loaded = false;
+            showTweets(loadMore.reverse());
+            loadMore = [];
+        }
+
+        var bindScroll = function(){
+          if($(window).scrollTop() + $(window).height() > $(document).height() - 1) {
+               $(window).unbind('scroll');
+               if (loaded) { infiniteScroll() }
           }
-          hiddenTweets = [];
-          $updateTweets.hide();
+        }
+
+        $(window).scroll(bindScroll);
+
+        var showTweets = function(tweets) {
+          pagebreak = Math.min(tweets.length, limit);
+          tweets = tweets.slice(0, pagebreak);
+          tweets.forEach(function(tweet){
+            showTweet(tweet);
+          });
+
+          loaded = true;
         }
 
         var showTweet = function(tweet) {
-          tweetCount += 1; //temporary
-          tweet.count = tweetCount; //temporary
+          tweet.count = streams.home.indexOf(tweet); //temporary
+          if (topTweet < streams.home.indexOf(tweet)) { topTweet = streams.home.indexOf(tweet) }
 
           var $tweet = $('<li>', {
             class: 'tweet'
@@ -118,13 +147,18 @@
             .append($message)
             .append($timeStamp)
             .append($count); //temporary
-          $tweet.prependTo($tweets);
+
           if (loaded) {
+            $tweet.prependTo($tweets);
             $tweet.hide();
             $tweet.slideDown('slow');
+            $tweets.find('li:nth-child(n+' + (limit + 1) + ')').remove();
+          } else {
+            $tweet.appendTo($tweets);
           }
         }
         showTweets(initialTweets);
+        loaded = true;
         checkTweets();
       });
 
