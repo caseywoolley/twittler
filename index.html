@@ -30,64 +30,68 @@
         $tweets.html('');
         var $updateTweets = $('.update-tweets');
         $updateTweets.css({'display' : 'none'});
-
+        var initialTweets = streams.home.reverse();
+        var userPage = window.location.hash.substr(1);
         var visitor = 'turdferguson';
         streams.users[visitor] = [];
         var newTweets;
         var currentTweets = 0;
         var limit = 20;
         var loaded = false;
-        var displayNew = true;
         var hiddenTweets = [];
         var tweetCount = 0; //temporary
 
-
+        console.log(userPage);
         console.log(users);
         console.log(streams);
 
+        //TODO: add click event for username link to show their feed + return home button
+
         $updateTweets.on('click', function(){
-          displayNew = true;
-          newTweets = hiddenTweets.reverse();
-          hiddenTweets = [];
-          for (var tweet in newTweets){
-            tweetCount += 1; //temporary
-            showTweet(newTweets[tweet]);
-          }
-          $(this).hide();
-
-
+          showTweets(hiddenTweets);
         });
 
-        var addTweets = function(index, shown){
-          while(index >= shown){
-            var tweet = streams.home[index];
-            if (displayNew){
-              tweetCount += 1; //temporary
-              showTweet(tweet);
-            } else {
-              hiddenTweets.push(tweet);
-              var s = 's';
-              if ( hiddenTweets.length === 1 ) {
-                s = '';
-                $updateTweets.show();
-              }
-              $updateTweets.text('Show ' + hiddenTweets.length + ' new tweet' + s);
+        var addTweets = function(all, shown){
+
+          //store new tweets to be displayed later
+          while(all > shown){
+            var tweet = streams.home[all];
+            if (loaded){ hiddenTweets.push(tweet) }
+            var s = 's';
+            var hiddenCount = hiddenTweets.length;
+            if ( hiddenTweets.length === 1 ) {
+              s = '';
+              $updateTweets.show();
             }
-            index -= 1;
+
+            //update button text
+            $updateTweets.text('Show ' + (hiddenTweets.length > 99 ? '100+' : hiddenTweets.length) + ' new tweet' + s);
+            all -= 1;
           }
-          displayNew = false;
         }
 
         var checkTweets = function() {
           newTweets = streams.home.length - 1;
           addTweets(newTweets, currentTweets);
-          currentTweets = newTweets + 1;
+          currentTweets = newTweets;
           $tweets.find('li:nth-child(n+' + limit + ')').remove();
           loaded = true;
           setTimeout(checkTweets, 500);
         };
 
+        var showTweets = function(tweets) {
+          var pagebreak = Math.min(tweets.length, limit);
+          for (var i = 0; i < pagebreak; i++){
+            showTweet(tweets[i]);
+          }
+          hiddenTweets = [];
+          $updateTweets.hide();
+        }
+
         var showTweet = function(tweet) {
+          tweetCount += 1; //temporary
+          tweet.count = tweetCount; //temporary
+
           var $tweet = $('<li>', {
             class: 'tweet'
           });
@@ -107,7 +111,7 @@
             })
           });
           var $count = $('<div>', { //temporary
-              text: tweetCount
+              text: tweet.count
           });
           $tweet
             .append($user)
@@ -120,6 +124,7 @@
             $tweet.slideDown('slow');
           }
         }
+        showTweets(initialTweets);
         checkTweets();
       });
 
