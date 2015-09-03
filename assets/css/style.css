@@ -26,6 +26,10 @@ section {
   width: 90%;
 }
 
+.update-tweets {
+  width: 100%;
+}
+
 ul {
   list-style-type: none;
   padding: 0;
@@ -41,7 +45,9 @@ li {
   border-style: solid;
   border-radius: 4px;
 }
-
+.new-tweet {
+  background-color: yellow;
+}
 .tweet
 .message,
 time {
