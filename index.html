@@ -4,129 +4,163 @@
     <title>Twittler</title>
     <link rel="stylesheet" href="assets/css/normalize.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <script src="assets/js/jquery.js"></script>
     <script src="assets/js/data_generator.js"></script>
   </head>
   <body>
 
-    <header><h1>Twittler</h1></header>
+    <header>
+      <span><a href='#' class='logo'><h1>Twittler</h1></a></span>
+      <span><a href='#' class='visitor'>name</a></span>
+    </header>
     <nav>
       <ul></ul>
     </nav>
+
     <div class="container">
-      <section>
-      <button class="update-tweets"></button>
-      <ul class="tweets"></ul>
+      <section class="feed">
+        <textarea class='compose'></textarea>
+        <button class='compose-btn'>Compose New Tweet</button>
+        <button class="update-tweets"></button>
+        <ul class="tweets"></ul>
       </section>
     </div>
-    <footer><h3>Twittler</h3></footer>
+    <!-- <footer><h3>Twittler</h3></footer> -->
 
     <script>
-      // home = my tweets + followed
-
       $(document).ready(function(){
-
-        var $tweets = $('.tweets');
-        $tweets.html('');
-        var $updateTweets = $('.update-tweets');
-        $updateTweets.css({'display' : 'none'});
-        var initialTweets = streams.home.slice().reverse();
-        var userPage = window.location.hash.substr(1);
-        var visitor = 'turdferguson';
-        streams.users[visitor] = [];
-        var newTweets;
-        var currentTweets = initialTweets.length;
-        var visibleTweets = 0;
-        var topTweet = 0;
-        var limit = 20;
-        var pagebreak;
-        var loaded = false;
-        var hiddenTweets = [];
-
-        console.log(userPage);
-        console.log(users);
-        console.log(streams.home);
-        console.log(initialTweets);
 
         //TODO: add click event for username link to show their feed + return home button
 
+        visitor = 'turdferguson';
+        $visitor = $('.visitor');
+        $visitor.text('@' + visitor);
+        streams.users[visitor] = [];
+        var $tweets = $('.tweets');
+        var $updateTweets = $('.update-tweets');
+        var limit = 10;
+        var checkFrequency = 1000;
+        var feed, userStream, initialTweets, topTweet, loaded, hiddenTweets, newTweet;
+
+        //load initial state of variables for various feeds
+        var loadFeed = function() {
+          feed = streams.home;
+          userStream = window.location.hash.substr(1);
+          if (userStream) { feed = streams.users[userStream] };
+          if (userStream === visitor || feed === streams.home) {
+            $('.compose-btn').show();
+          } else {
+            $('.compose-btn').hide();
+          }
+          $tweets.html('');
+          initialTweets = feed.reverse().slice((feed.length - 1) - limit, feed.length).reverse();
+          topTweet = 0;
+          $updateTweets.hide();
+          hiddenTweets = [];
+
+          //do initial load of existing tweets
+          loaded = false;
+          showTweets(initialTweets);
+          loaded = true;
+
+          //kickoff new Tweet interval checker
+          checkTweets();
+        }
+
+        $('.compose-btn').on('click', function(){
+          if ( $(this).text() === 'Send' ) {
+            $('.compose').slideUp('fast', function(){
+              $('.compose').val('');
+            });
+            writeTweet($('.compose').val());
+            $(this).text('Compose New Tweet');
+
+            newTweet = true;
+            var i = 0;
+            while(newTweet && i < 10000) {
+              if (feed[feed.length - 1].user === visitor){
+                console.log(i);
+                addTweets();
+                showTweets(hiddenTweets);
+                hiddenTweets = [];
+                $updateTweets.hide();
+                newTweet = false;
+              }
+              i ++;
+            }
+
+          } else {
+            $('.compose').slideDown('fast');
+            $(this).text('Send');
+          }
+        });
+
+        $('.logo').on('click', function(event){
+          loadFeed();
+        });
+
+        $('.visitor').on('click', function(){
+          console.log('click');
+        });
+
+        $('.username').on('click', function(){
+          console.log('click');
+          //event.stopPropagation();
+          //event.preventDefault();
+          loadFeed();
+        });
+
+        //Update tweet feed when button is clicked
         $updateTweets.on('click', function(){
           showTweets(hiddenTweets);
           hiddenTweets = [];
           $updateTweets.hide();
         });
 
-        //store new tweets to be displayed later
-        var addTweets = function(all, shown){
-          $(window).unbind('scroll');
-          if (loaded){
-            while(all > shown){
-              var tweet = streams.home[all];
-              hiddenTweets.push(tweet);
-              var s = 's';
-              if ( hiddenTweets.length === 1 ) {
-                s = '';
-                $updateTweets.show();
-              }
 
-              //show tweet count on refresh button
-              $updateTweets.text('Show ' + (hiddenTweets.length > 99 ? '100+' : hiddenTweets.length) + ' new tweet' + s);
-              all -= 1;
-            }
-          }
-          $(window).bind('scroll', bindScroll);
-          console.log(hiddenTweets.length);
+        //store new tweets to be displayed later
+        var addTweets = function(){
+          if (topTweet < feed.length) { hiddenTweets = feed.slice(topTweet, feed.length ) }
+
+          //update text for "Show new tweets" button
+          var s = 's';
+          if (hiddenTweets.length > 0) { $updateTweets.show() }
+          if ( hiddenTweets.length === 1 ) { s = '' }
+          $updateTweets.text('Show ' + (hiddenTweets.length > 99 ? '100+' : hiddenTweets.length) + ' new tweet' + s);
         }
 
+        //periodically check for new tweets
         var checkTweets = function() {
-          newTweets = streams.home.length - 1;
-          addTweets(newTweets, currentTweets);
-          currentTweets = newTweets;
-
-          //loaded = true;
-          setTimeout(checkTweets, 500);
+          addTweets();
+          setTimeout(checkTweets, checkFrequency);
         };
 
-        var infiniteScroll = function() {
-            var end = (topTweet + 1) - $('.tweet').length;
-            var start = end - Math.min(limit, end);
-            var loadMore = streams.home.slice(start, end);
-            $(window).bind('scroll', bindScroll);
-            console.log(loadMore);
-            loaded = false;
-            showTweets(loadMore.reverse());
-            loadMore = [];
-        }
 
-        var bindScroll = function(){
-          if($(window).scrollTop() + $(window).height() > $(document).height() - 1) {
-               $(window).unbind('scroll');
-               if (loaded) { infiniteScroll() }
-          }
-        }
-
-        $(window).scroll(bindScroll);
-
+        //Send on page of most recent tweets to be displayed
         var showTweets = function(tweets) {
-          pagebreak = Math.min(tweets.length, limit);
-          tweets = tweets.slice(0, pagebreak);
+          var pagebreak = Math.min(tweets.length, limit);
+          tweets = tweets.reverse().slice(0, pagebreak).reverse();
           tweets.forEach(function(tweet){
             showTweet(tweet);
           });
-
           loaded = true;
         }
-
+        
+        //Convert tweet to html display
         var showTweet = function(tweet) {
-          tweet.count = streams.home.indexOf(tweet); //temporary
-          if (topTweet < streams.home.indexOf(tweet)) { topTweet = streams.home.indexOf(tweet) }
+          tweet.count = feed.indexOf(tweet); //temporary
+          if (tweet.user === visitor) { newTweet = false; console.log('newTweet') }
+          if (topTweet < feed.indexOf(tweet) + 1) {
+            topTweet = feed.indexOf(tweet) + 1
+          }
 
           var $tweet = $('<li>', {
             class: 'tweet'
           });
           var $user = $('<a>', {
             href: '#' + tweet.user,
-            class: 'username',
+            class: 'user',
             text: "@" + tweet.user
           });
           var $message = $('<span>', {
@@ -157,9 +191,29 @@
             $tweet.appendTo($tweets);
           }
         }
-        showTweets(initialTweets);
-        loaded = true;
-        checkTweets();
+
+        var infiniteScroll = function() {
+            var end = topTweet - $('.tweet').length;
+            var start = end - Math.min(limit, end);
+            var loadMore = feed.slice(start, end);
+            $(window).bind('scroll', bindScroll);
+            console.log(loadMore);
+            loaded = false;
+            showTweets(loadMore.reverse());
+            loadMore = [];
+        }
+
+        var bindScroll = function(){
+          if($(window).scrollTop() + $(window).height() > $(document).height() - 1) {
+               $(window).unbind('scroll');
+               if (loaded) { infiniteScroll() }
+          }
+        }
+
+        //initialize feed and track scrolling
+        $(window).scroll(bindScroll);
+        loadFeed();
+
       });
 
     </script>

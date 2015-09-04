@@ -8,50 +8,121 @@ header,
 footer {
   background-color: orange;
   width: 100%;
+  height: 50px;
+  line-height: 50px;
+}
+
+header span {
+  height: 50px;
+  line-height: 50px;
+  width: 50%;
 }
 
 h1 {
-  bacground-color: blue;
-  padding: 0;
+  display: inline;
+  padding-left: 30px;
   margin: 0;
 }
 
-.container {
-  width: 420px;
+.logo-link {
+  float: left;
+}
+
+.visitor {
+  padding-right: 20px;
+  font-size: 20px;
+  float: right;
+  text-align: right;
+}
+
+.compose,
+.compose-btn {
+  outline: none;
+}
+
+.compose {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    display: none;
+    width: 100%;
+    height: 100px;
+    rows: 6;
+    padding: 10px;
+    font-size: 20px;
+    border-radius: 10px;
+    border-color: grey;
+}
+
+.compose-btn {
+  background-color: indianred;
+  border-color: red;
+  border-radius: 10px;
+  margin-right: -200px;
+  width: 350px;
+  height: 40px;
+}
+
+.title {
+  display:inline;
+  float: right;
+}
+
+a,
+a:hover,
+a:active,
+a:visited {
+  color: black;
+  text-decoration: none;
+}
+
+.username {
+  color: grey;
+  cursor: pointer;
+}
+
+.feed {
+  width: 350px;
   margin-left: auto;
   margin-right: auto;
 }
 
 section {
-  width: 90%;
+  width: 100%;
 }
 
 .update-tweets {
   width: 100%;
   height: 40px;
-  margin-top: 4px;
 }
-
 ul {
   list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
-li {
+.tweet,
+.compose,
+.compose-btn,
+.update-tweets {
+  margin-top: 4px;
+}
+
+.tweet {
   background-color: aqua;
   border-color: green;
-  padding: 10px;
-  margin-top: 4px;
+  padding: 15px;
   border: 1px;
   border-style: solid;
   border-radius: 7px;
+  word-wrap: break-word;
 }
-.new-tweet {
-  background-color: yellow;
+
+.message {
+  margin-left: 10px;
+  font-size: 20px;
 }
-.tweet
-.message,
+
 time {
-  margin-left: .3em;
+  display: block;
 }
