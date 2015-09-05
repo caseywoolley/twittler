@@ -4,31 +4,22 @@
     <title>Twittler</title>
     <link rel="stylesheet" href="assets/css/normalize.css">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <script src="assets/js/jquery.js"></script>
     <script src="assets/js/data_generator.js"></script>
   </head>
   <body>
-
     <header>
-      <span><a href='#' class='logo feedlink'><h1>Twittler</h1></a></span>
+      <span><a href='#' class='logo feedlink'><h1 id='main-logo'>Twittler</h1></a></span>
       <span class='loc'></span>
       <span class='visitor'></span>
     </header>
-    <nav>
-      <ul></ul>
-    </nav>
-
-    <div class="container">
-      <section class="feed">
-        <button class='cancel-btn'>Cancel</button>
-        <textarea class='compose'></textarea>
-        <button class='compose-btn'>Compose New Tweet</button>
-        <button class="update-tweets"></button>
-        <ul class="tweets"></ul>
-      </section>
-    </div>
-    <!-- <footer><h3>Twittler</h3></footer> -->
+    <section class="feed">
+      <button class='cancel-btn'>Cancel</button>
+      <textarea class='compose'></textarea>
+      <button class='compose-btn'>Compose New Tweet</button>
+      <button class="update-tweets"></button>
+      <ul class="tweets"></ul>
+    </section>
 
     <script>
       $(document).ready(function(){
@@ -36,27 +27,27 @@
         //initialize global variables
         visitor = 'turdferguson';
         $visitor = $('.visitor');
+        streams.users[visitor] = [];
+        var $tweets = $('.tweets');
+        var $updateTweets = $('.update-tweets');
+        var limit = 30;
+        var checkFrequency = 1000;
+        var feed, userStream, initialTweets, topTweet, loaded, hiddenTweets, newTweet;
         var $visitorLink = $( '<a>', {
           'class' : 'feedlink',
           'text' : '@' + visitor,
           'href' : '#' + visitor
         });
         $visitor.append($visitorLink);
-        streams.users[visitor] = [];
-        var $tweets = $('.tweets');
-        var $updateTweets = $('.update-tweets');
-        var limit = 10;
-        var checkFrequency = 1000;
-        var feed, userStream, initialTweets, topTweet, loaded, hiddenTweets, newTweet;
 
-        //load initial state of variables for various feeds
+        //load initial state of variables for user feeds
         var loadFeed = function() {
-          feed = streams.home;
           userStream = window.location.hash.substr(1);
           if (userStream) {
             feed = streams.users[userStream]
           } else {
             userStream = 'home';
+            feed = streams.home;
           }
           if (userStream === visitor || userStream === 'home') {
             $('.compose-btn').show();
@@ -65,7 +56,8 @@
           }
           $('.loc').text('@' + userStream);
           $tweets.html('');
-          initialTweets = feed.reverse().slice((feed.length - 1) - limit, feed.length).reverse();
+          var feedCopy = feed.slice();
+          initialTweets = feedCopy.reverse().slice((feed.length - 1) - limit, feed.length);
           topTweet = 0;
           $updateTweets.hide();
           hiddenTweets = [];
@@ -114,20 +106,13 @@
           $('.compose-btn').text('Compose New Tweet');
         });
 
-
-
         $(document).on('click', '.feedlink', function(){
-          getUrl(this);
+          event.preventDefault();
+          event.stopPropagation();
+          window.location.hash = $(this).attr('href');
           loadFeed();
         });
 
-        var getUrl = function(element){
-          event.preventDefault();
-          event.stopPropagation();
-          window.location.hash = $(element).attr('href');
-        }
-
-        //Update tweet feed when button is clicked
         $updateTweets.on('click', function(){
           showTweets(hiddenTweets);
           hiddenTweets = [];
@@ -152,7 +137,6 @@
           setTimeout(checkTweets, checkFrequency);
         };
 
-
         //Prepare provided tweets for display
         var showTweets = function(tweets) {
           //update 'timesince' on existing tweets
@@ -160,10 +144,9 @@
             var datetime = $(this).attr('datetime');
             var datetime = new Date(datetime);
             var datetime = timeSince(datetime);
-            console.log(datetime);
-          $(this).text(datetime);
-            console.log( $(this).attr('datetime'));
+            $(this).text(datetime);
           });
+          //limit to one page of tweets
           var pagebreak = Math.min(tweets.length, limit);
           tweets = tweets.reverse().slice(0, pagebreak).reverse();
           tweets.forEach(function(tweet){
@@ -174,12 +157,13 @@
 
         //Convert tweet to html display
         var showTweet = function(tweet) {
-          tweet.count = feed.indexOf(tweet); //temporary
+          tweet.count = feed.indexOf(tweet); //for testing
           if (tweet.user === visitor) { newTweet = false }
           if (topTweet < feed.indexOf(tweet) + 1) {
             topTweet = feed.indexOf(tweet) + 1
           }
 
+          //build html elements
           var $tweet = $('<li>', {
             class: 'tweet'
           });
@@ -201,10 +185,10 @@
             html: $('<time>', {
               class: 'time-stamp',
               datetime: tweet.created_at,
-              text: '- ' + timeSince(tweet.created_at)
+              text: timeSince(tweet.created_at)
             })
           });
-          var $count = $('<div>', { //temporary
+          var $count = $('<div>', { //for testing
               text: tweet.count
           });
           $tweetInfo
@@ -213,8 +197,8 @@
           $tweet
             .append($tweetInfo)
             .append($message)
-            //.append($count); //temporary
-
+            //.append($count); //for testing
+          //display tweets
           if (loaded) {
             $tweet.prependTo($tweets);
             $tweet.hide();
@@ -231,7 +215,6 @@
             var start = end - Math.min(limit, end);
             var loadMore = feed.slice(start, end);
             $(window).bind('scroll', bindScroll);
-            console.log(loadMore);
             loaded = false;
             showTweets(loadMore.reverse());
             loadMore = [];
@@ -244,6 +227,7 @@
           }
         }
 
+        //Convert timestamp to twitter style human friendly format
         //http://stackoverflow.com/questions/6108819/javascript-timestamp-to-relative-time-eg-2-seconds-ago-one-week-ago-etc-best
         var timeSince = function(timeStamp) {
             var now = new Date(),
@@ -268,9 +252,8 @@
         //initialize feed and track scrolling
         $(window).scroll(bindScroll);
         loadFeed();
-
+        
       });
-
     </script>
   </body>
 </html>
