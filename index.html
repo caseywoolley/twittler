@@ -11,8 +11,9 @@
   <body>
 
     <header>
-      <span><a href='#' class='logo'><h1>Twittler</h1></a></span>
-      <span><a href='#' class='visitor'>name</a></span>
+      <span><a href='#' class='logo feedlink'><h1>Twittler</h1></a></span>
+      <span class='loc'></span>
+      <span class='visitor'></span>
     </header>
     <nav>
       <ul></ul>
@@ -20,6 +21,7 @@
 
     <div class="container">
       <section class="feed">
+        <button class='cancel-btn'>Cancel</button>
         <textarea class='compose'></textarea>
         <button class='compose-btn'>Compose New Tweet</button>
         <button class="update-tweets"></button>
@@ -31,11 +33,14 @@
     <script>
       $(document).ready(function(){
 
-        //TODO: add click event for username link to show their feed + return home button
-
         visitor = 'turdferguson';
         $visitor = $('.visitor');
-        $visitor.text('@' + visitor);
+        var $visitorLink = $( '<a>', {
+          'class' : 'feedlink',
+          'text' : '@' + visitor,
+          'href' : '#' + visitor
+        });
+        $visitor.append($visitorLink);
         streams.users[visitor] = [];
         var $tweets = $('.tweets');
         var $updateTweets = $('.update-tweets');
@@ -47,12 +52,17 @@
         var loadFeed = function() {
           feed = streams.home;
           userStream = window.location.hash.substr(1);
-          if (userStream) { feed = streams.users[userStream] };
-          if (userStream === visitor || feed === streams.home) {
+          if (userStream) {
+            feed = streams.users[userStream]
+          } else {
+            userStream = 'home';
+          }
+          if (userStream === visitor || userStream === 'home') {
             $('.compose-btn').show();
           } else {
             $('.compose-btn').hide();
           }
+          $('.loc').text('@' + userStream);
           $tweets.html('');
           initialTweets = feed.reverse().slice((feed.length - 1) - limit, feed.length).reverse();
           topTweet = 0;
@@ -68,8 +78,10 @@
           checkTweets();
         }
 
+        //Toggle composition window and write tweets
         $('.compose-btn').on('click', function(){
-          if ( $(this).text() === 'Send' ) {
+          if ( $('.compose').is(":visible") ) {
+            $('.cancel-btn').slideUp('fast');
             $('.compose').slideUp('fast', function(){
               $('.compose').val('');
             });
@@ -77,39 +89,42 @@
             $(this).text('Compose New Tweet');
 
             newTweet = true;
-            var i = 0;
-            while(newTweet && i < 10000) {
+            while(newTweet) {
               if (feed[feed.length - 1].user === visitor){
-                console.log(i);
                 addTweets();
                 showTweets(hiddenTweets);
                 hiddenTweets = [];
                 $updateTweets.hide();
                 newTweet = false;
               }
-              i ++;
             }
-
           } else {
             $('.compose').slideDown('fast');
-            $(this).text('Send');
+            $('.cancel-btn').slideDown('fast');
+            $(this).text('Post');
           }
         });
 
-        $('.logo').on('click', function(event){
+        $('.cancel-btn').on('click', function(){
+          $(this).slideUp('fast');
+          $('.compose').slideUp('fast', function(){
+            $('.compose').val('');
+          });
+          $('.compose-btn').text('Compose New Tweet');
+        });
+
+
+
+        $(document).on('click', '.feedlink', function(){
+          getUrl(this);
           loadFeed();
         });
 
-        $('.visitor').on('click', function(){
-          console.log('click');
-        });
-
-        $('.username').on('click', function(){
-          console.log('click');
-          //event.stopPropagation();
-          //event.preventDefault();
-          loadFeed();
-        });
+        var getUrl = function(element){
+          event.preventDefault();
+          event.stopPropagation();
+          window.location.hash = $(element).attr('href');
+        }
 
         //Update tweet feed when button is clicked
         $updateTweets.on('click', function(){
@@ -146,7 +161,7 @@
           });
           loaded = true;
         }
-        
+
         //Convert tweet to html display
         var showTweet = function(tweet) {
           tweet.count = feed.indexOf(tweet); //temporary
@@ -159,8 +174,8 @@
             class: 'tweet'
           });
           var $user = $('<a>', {
-            href: '#' + tweet.user,
-            class: 'user',
+            href: "#" + tweet.user,
+            class: 'user feedlink',
             text: "@" + tweet.user
           });
           var $message = $('<span>', {
