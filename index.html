@@ -33,6 +33,7 @@
     <script>
       $(document).ready(function(){
 
+        //initialize global variables
         visitor = 'turdferguson';
         $visitor = $('.visitor');
         var $visitorLink = $( '<a>', {
@@ -152,8 +153,17 @@
         };
 
 
-        //Send on page of most recent tweets to be displayed
+        //Prepare provided tweets for display
         var showTweets = function(tweets) {
+          //update 'timesince' on existing tweets
+          $('.tweet time').each(function(){
+            var datetime = $(this).attr('datetime');
+            var datetime = new Date(datetime);
+            var datetime = timeSince(datetime);
+            console.log(datetime);
+          $(this).text(datetime);
+            console.log( $(this).attr('datetime'));
+          });
           var pagebreak = Math.min(tweets.length, limit);
           tweets = tweets.reverse().slice(0, pagebreak).reverse();
           tweets.forEach(function(tweet){
@@ -165,7 +175,7 @@
         //Convert tweet to html display
         var showTweet = function(tweet) {
           tweet.count = feed.indexOf(tweet); //temporary
-          if (tweet.user === visitor) { newTweet = false; console.log('newTweet') }
+          if (tweet.user === visitor) { newTweet = false }
           if (topTweet < feed.indexOf(tweet) + 1) {
             topTweet = feed.indexOf(tweet) + 1
           }
@@ -173,35 +183,44 @@
           var $tweet = $('<li>', {
             class: 'tweet'
           });
-          var $user = $('<a>', {
-            href: "#" + tweet.user,
-            class: 'user feedlink',
-            text: "@" + tweet.user
+          var $tweetInfo = $('<div>', {
+            class: 'tweet-info'
           });
-          var $message = $('<span>', {
+          var $user = $('<span>', {
+            html: $('<a>', {
+              href: "#" + tweet.user,
+              class: 'user feedlink',
+              text: "@" + tweet.user
+            })
+          });
+          var $message = $('<div>', {
             class: 'message',
             text: tweet.message
           });
-          var $timeStamp = $('<small>', {
-            class: 'time-stamp',
+          var $timeStamp = $('<span>', {
             html: $('<time>', {
-              text: tweet.created_at
+              class: 'time-stamp',
+              datetime: tweet.created_at,
+              text: '- ' + timeSince(tweet.created_at)
             })
           });
           var $count = $('<div>', { //temporary
               text: tweet.count
           });
-          $tweet
+          $tweetInfo
             .append($user)
-            .append($message)
             .append($timeStamp)
-            .append($count); //temporary
+          $tweet
+            .append($tweetInfo)
+            .append($message)
+            //.append($count); //temporary
 
           if (loaded) {
             $tweet.prependTo($tweets);
             $tweet.hide();
-            $tweet.slideDown('slow');
-            $tweets.find('li:nth-child(n+' + (limit + 1) + ')').remove();
+            $tweet.slideDown('slow', function(){
+              $tweets.find('li:nth-child(n+' + (limit + 1) + ')').remove();
+            });
           } else {
             $tweet.appendTo($tweets);
           }
@@ -223,6 +242,27 @@
                $(window).unbind('scroll');
                if (loaded) { infiniteScroll() }
           }
+        }
+
+        //http://stackoverflow.com/questions/6108819/javascript-timestamp-to-relative-time-eg-2-seconds-ago-one-week-ago-etc-best
+        var timeSince = function(timeStamp) {
+            var now = new Date(),
+                secondsPast = (now.getTime() - timeStamp.getTime() ) / 1000;
+            if(secondsPast < 60){
+                return parseInt(secondsPast) + 's';
+            }
+            if(secondsPast < 3600){
+                return parseInt(secondsPast/60) + 'm';
+            }
+            if(secondsPast <= 86400){
+                return parseInt(secondsPast/3600) + 'h';
+            }
+            if(secondsPast > 86400){
+                  day = timeStamp.getDate();
+                  month = timeStamp.toDateString().match(/ [a-zA-Z]*/)[0].replace(" ","");
+                  year = timeStamp.getFullYear() == now.getFullYear() ? "" :  " "+timeStamp.getFullYear();
+                  return day + " " + month + year;
+            }
         }
 
         //initialize feed and track scrolling

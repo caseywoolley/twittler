@@ -12,6 +12,13 @@ footer {
   line-height: 50px;
 }
 
+.tweet span {
+  display: inline-block;
+  padding-right: .4em;
+}
+
+
+
 header span {
   height: 50px;
   line-height: 50px;
