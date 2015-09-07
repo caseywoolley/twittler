@@ -112,7 +112,7 @@
         });
 
         $updateTweets.on('click', function(){
-          showTweets(hiddenTweets);
+          showTweets(hiddenTweets.slice(-limit));
           hiddenTweets = [];
           $updateTweets.hide();
         });
