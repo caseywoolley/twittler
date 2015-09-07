@@ -56,15 +56,13 @@
           }
           $('.loc').text('@' + userStream);
           $tweets.html('');
-          var feedCopy = feed.slice();
-          initialTweets = feedCopy.reverse().slice((feed.length - 1) - limit, feed.length);
           topTweet = 0;
           $updateTweets.hide();
           hiddenTweets = [];
 
           //do initial load of existing tweets
           loaded = false;
-          showTweets(initialTweets);
+          showTweets(feed.slice().reverse());
           loaded = true;
 
           //kickoff new Tweet interval checker
@@ -126,7 +124,7 @@
 
           //update text for "Show new tweets" button
           var s = 's';
-          if (hiddenTweets.length > 0) { $updateTweets.show() }
+          if (hiddenTweets.length > 0) { $updateTweets.slideDown() }
           if ( hiddenTweets.length === 1 ) { s = '' }
           $updateTweets.text('Show ' + (hiddenTweets.length > 99 ? '100+' : hiddenTweets.length) + ' new tweet' + s);
         }
@@ -146,9 +144,10 @@
             var datetime = timeSince(datetime);
             $(this).text(datetime);
           });
-          //limit to one page of tweets
+          //limit to one page of tweets or less
           var pagebreak = Math.min(tweets.length, limit);
-          tweets = tweets.reverse().slice(0, pagebreak).reverse();
+          tweets = tweets.slice(0, pagebreak);
+          if (tweets[0])
           tweets.forEach(function(tweet){
             showTweet(tweet);
           });
@@ -213,10 +212,10 @@
         var infiniteScroll = function() {
             var end = topTweet - $('.tweet').length;
             var start = end - Math.min(limit, end);
-            var loadMore = feed.slice(start, end);
+            var loadMore = feed.slice(start, end).reverse();
             $(window).bind('scroll', bindScroll);
             loaded = false;
-            showTweets(loadMore.reverse());
+            showTweets(loadMore);
             loadMore = [];
         }
 
@@ -252,7 +251,7 @@
         //initialize feed and track scrolling
         $(window).scroll(bindScroll);
         loadFeed();
-        
+
       });
     </script>
   </body>
