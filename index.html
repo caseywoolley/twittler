@@ -83,7 +83,7 @@
             while(newTweet) {
               if (feed[feed.length - 1].user === visitor){
                 addTweets();
-                showTweets(hiddenTweets);
+                showTweets(hiddenTweets.slice(-limit));
                 hiddenTweets = [];
                 $updateTweets.hide();
                 newTweet = false;
